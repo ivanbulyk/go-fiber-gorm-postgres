@@ -16,24 +16,12 @@ import (
 	"gorm.io/gorm"
 )
 
-type Book struct {
-	Author    string `json:"author"`
-	Title     string `json:"title"`
-	Publisher string `json:"publisher"`
-}
-type Query struct {
-	Date      string  `json:"date"`
-	Time      string  `json:"time"`
-	TimeSpent float64 `json:"time_spent"`
-	SQL       string  `json:"sql"`
-}
-
 type Repository struct {
 	DB *gorm.DB
 }
 
 func (r *Repository) CreateBook(context *fiber.Ctx) error {
-	book := Book{}
+	book := models.Book{}
 
 	err := context.BodyParser(&book)
 
@@ -78,6 +66,7 @@ func (r *Repository) DeleteBook(context *fiber.Ctx) error {
 	err := r.DB.Debug().Delete(bookModel, id)
 
 	if err.Error != nil {
+
 		context.Status(http.StatusBadRequest).JSON(&fiber.Map{
 			"message": "could not delete book",
 		})
@@ -213,7 +202,7 @@ func main() {
 	app.Listen(":8080")
 }
 
-func ReadLineNext() (res Query) {
+func ReadLineNext() (res models.Query) {
 
 	scanner := bufio.NewScanner(&storage.Body)
 
@@ -222,7 +211,6 @@ func ReadLineNext() (res Query) {
 	scanner.Split(bufio.ScanWords)
 
 	scannedSlice := make([]string, 0)
-	backedSQL := ""
 
 	// Scan for next token
 	for scanner.Scan() {
@@ -230,9 +218,6 @@ func ReadLineNext() (res Query) {
 		if scanner.Text() != "" {
 
 			scannedSlice = append(scannedSlice, scanner.Text())
-			if InSetSQL(scanner.Text()) {
-				backedSQL = backedSQL + scanner.Text()
-			}
 
 		}
 		continue
@@ -279,7 +264,7 @@ func ReadLineNext() (res Query) {
 	if InSetSQL(scannedSlice[5]) {
 		res.SQL = scannedSlice[5]
 	} else {
-		res.SQL = backedSQL
+		res.SQL = "undefined"
 	}
 
 	fmt.Println(res)
